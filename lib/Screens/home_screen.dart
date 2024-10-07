@@ -15,12 +15,13 @@ class _HomeScreenState extends State<HomeScreen> {
     var currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser != null) {
       return FirebaseFirestore.instance
-          .collection('habits')
-          .where('userId', isEqualTo: currentUser.uid)
-          .orderBy('createdAt', descending: true) // Sort by createdAt timestamp
+          .collection(
+              'habit') // Use 'habits' if this is what you used in Firestore
+          //.where('userId', isEqualTo: currentUser.uid)
+          // .orderBy('createdAt', descending: true) // Sort by createdAt timestamp
           .snapshots();
     } else {
-      return Stream.empty();
+      return const Stream.empty();
     }
   }
 
@@ -28,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Your Habits'),
+        title: const Text('Your Habits'),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _habitStream(),
@@ -66,19 +67,15 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           } else {
             // If no data is found
-            return Center(child: Text('No habits found. Start adding some!'));
+            return const Center(
+                child: Text('No habits found. Start adding some!'));
           }
         },
       ),
       bottomNavigationBar: BottomNavigationBar(
         onTap: (index) {
           if (index == 0) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => HomeScreen(),
-              ),
-            );
+            Navigator.popUntil(context, (route) => route.isFirst);
           }
           if (index == 1) {
             Navigator.push(

@@ -1,9 +1,8 @@
-import 'dart:ffi';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:habit_hub/Screens/home_screen.dart';
 import 'package:habit_hub/Screens/profile_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AddScreen extends StatefulWidget {
   @override
@@ -42,16 +41,26 @@ class _AddScreenState extends State<AddScreen> {
       String reminderTime = _selectedTime.format(context);
 
       await FirebaseFirestore.instance.collection('habit').add({
+        // 'userId': currentUser.uid,
         'title': habitTitle,
         'description': description,
         'reminder': reminderTime,
-        // 'createdAt': Timestamp.now(),
+        'createdAt': Timestamp.now(),
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Habit "$habitTitle" added!'),
       ));
       _titleController.clear();
       _descriptionController.clear();
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Failed to save habit: User not logged in.'),
+      ));
     }
   }
 
@@ -69,75 +78,69 @@ class _AddScreenState extends State<AddScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
+            key: _formkey,
             child: ListView(
-          children: [
-            //Title field
-
-            TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'Habit Title',
-                hintText: 'Add Habit',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'please enter a habit title';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(
-              height: 20,
-            ),
-
-            // Descripiton field
-
-            TextFormField(
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Description',
-                hintText: 'Add description',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please enter your habit')));
-                }
-                return null;
-              },
-            ),
-            SizedBox(
-              height: 20,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Reminder Time: ${_selectedTime.format(context)}',
-                  style: TextStyle(fontSize: 16),
+                //Title field
+
+                TextFormField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Habit Title',
+                    hintText: 'Add Habit',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'please enter a habit title';
+                    }
+                    return null;
+                  },
                 ),
-                TextButton(
-                  onPressed: () => _selectTime(context),
-                  child: Text('Select Time'),
+                const SizedBox(
+                  height: 20,
+                ),
+
+                // Descripiton field
+
+                TextFormField(
+                  controller: _descriptionController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                    hintText: 'Add description',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text('Please enter your habit')));
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(
+                  height: 20,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Reminder Time: ${_selectedTime.format(context)}',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    TextButton(
+                      onPressed: () => _selectTime(context),
+                      child: Text('Select Time'),
+                    ),
+                  ],
+                ),
+                ElevatedButton(
+                  onPressed: _saveHabit,
+                  child: const Text('Save habit'),
                 ),
               ],
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => HomeScreen(),
-                  ),
-                );
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Habit updated')));
-              },
-              child: const Text('Save habit'),
-            ),
-          ],
-        )),
+            )),
       ),
       bottomNavigationBar: BottomNavigationBar(
         onTap: (index) {
