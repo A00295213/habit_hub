@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "192378376687",
+    "project_id": "habit-hub-cbd2b",
+    "storage_bucket": "habit-hub-cbd2b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:192378376687:android:57268e5d2cfeb9a223261a",
+        "android_client_info": {
+          "package_name": "com.example.habit_hub"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6yLBvKyt-NtLgWtQTV8OOBzprHFRnmSI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
