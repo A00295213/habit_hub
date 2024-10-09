@@ -9,10 +9,12 @@ class RegisterSceeen extends StatefulWidget {
 }
 
 class _RegisterSceeenState extends State<RegisterSceeen> {
+  final TextEditingController _userNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+
   final AuthService _authService = AuthService();
   @override
   Widget build(BuildContext context) {
@@ -67,8 +69,9 @@ class _RegisterSceeenState extends State<RegisterSceeen> {
               const SizedBox(
                 height: 5,
               ),
-              const TextField(
-                decoration: InputDecoration(
+              TextField(
+                controller: _userNameController,
+                decoration: const InputDecoration(
                   hintText: 'User name',
                   border: UnderlineInputBorder(),
                 ),
@@ -102,7 +105,9 @@ class _RegisterSceeenState extends State<RegisterSceeen> {
                   onPressed: () async {
                     User? user =
                         await _authService.registerInWithEmailAndPassword(
-                            _emailController.text, _passwordController.text);
+                            _emailController.text,
+                            _passwordController.text,
+                            _userNameController.text);
                     if (user != null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(

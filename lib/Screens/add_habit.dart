@@ -41,7 +41,7 @@ class _AddScreenState extends State<AddScreen> {
       String reminderTime = _selectedTime.format(context);
 
       await FirebaseFirestore.instance.collection('habit').add({
-        // 'userId': currentUser.uid,
+        'userId': FirebaseAuth.instance.currentUser?.uid,
         'title': habitTitle,
         'description': description,
         'reminder': reminderTime,

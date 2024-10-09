@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:habit_hub/Screens/home_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:habit_hub/Screens/reset_password.dart';
 import 'package:habit_hub/Screens/settings_screen.dart';
 import 'package:habit_hub/Screens/welcome_screen.dart';
@@ -14,17 +16,41 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final AuthService _authService = AuthService();
-  @override
-  int _currenetIndex = 0;
-  final List<Widget> _pages = [HomeScreen(), ProfileScreen()];
+  String? _username;
+  bool _isLoading = true; // To track loading state
 
-  void _onTabTapped(int index) {
-    setState(() {
-      _currenetIndex = index;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _fetchUsername();
   }
 
+  // Fetch the username from Firestore using the current user's uid
+  Future<void> _fetchUsername() async {
+    var currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      try {
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .get();
+
+        setState(() {
+          _username = userDoc['username']; // Fetch the 'username' field
+          _isLoading = false; // Once fetched, set loading to false
+        });
+      } catch (e) {
+        print('Error fetching username: $e');
+        setState(() {
+          _isLoading = false; // Even on error, set loading to false
+        });
+      }
+    }
+  }
+
+  final AuthService _authService = AuthService();
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
@@ -47,24 +73,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
         child: Column(
           children: [
-            const Row(
+            Row(
               children: [
-                CircleAvatar(
+                const CircleAvatar(
                   radius: 50,
                   child: Icon(
                     Icons.person,
                     size: 60,
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   width: 30,
                 ),
-                Text(
-                  'Jacky',
-                  style: TextStyle(
-                    fontSize: 30,
-                  ),
-                )
+                // Display a loading indicator or the username
+                _isLoading
+                    ? const CircularProgressIndicator()
+                    : Text(
+                        _username != null
+                            ? 'Hello, $_username!'
+                            : 'Username not found',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 30,
+                        ),
+                      ),
               ],
             ),
             const SizedBox(
@@ -148,7 +180,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       bottomNavigationBar: BottomNavigationBar(
         onTap: (index) {
           if (index == 0) {
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(
                 builder: (context) => HomeScreen(),
