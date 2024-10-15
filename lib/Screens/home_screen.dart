@@ -12,6 +12,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String? _username;
+  String? _rewards;
 
   @override
   void initState() {
@@ -19,7 +20,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _fetchUsername();
   }
 
-  // Fetch the username from Firestore using the current user's uid
   Future<void> _fetchUsername() async {
     var currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser != null) {
@@ -30,17 +30,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
       setState(() {
         _username = userDoc['username'];
+        _rewards = userDoc['rewards']?.toString();
       });
     }
   }
 
-  // Stream to listen to Firestore collection for the current user's habits
   Stream<QuerySnapshot> _habitStream() {
     var currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser != null) {
+      DateTime now = DateTime.now();
+      DateTime startOfDay = DateTime(now.year, now.month, now.day);
+      DateTime endOfDay = DateTime(now.year, now.month, now.day + 1);
+
+      Timestamp startTimestamp = Timestamp.fromDate(startOfDay);
+      Timestamp endTimestamp = Timestamp.fromDate(endOfDay);
+
       return FirebaseFirestore.instance
           .collection('habit')
           .where('userId', isEqualTo: currentUser.uid)
+          .where('createdAt', isGreaterThan: startTimestamp)
+          .where('createdAt', isLessThan: endTimestamp)
           .snapshots();
     } else {
       return Stream.empty();
@@ -50,26 +59,62 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: Text(
-          'Habit Hub',
-          style: TextStyle(color: Colors.blue),
+          'Today\'s Habit',
+          style: TextStyle(color: Colors.white),
         ),
+        backgroundColor: Colors.blueAccent,
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          SizedBox(
+            height: 20,
+          ),
+          Text(
+            'Welcome Back!',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 30,
+            ),
+          ),
           if (_username != null)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Hello, $_username!',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 30,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Expanded(
+                  flex: 6,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    // child: Text(
+                    //   'Hello, $_username!',
+                    //   style: const TextStyle(
+                    //     fontWeight: FontWeight.bold,
+                    //     fontSize: 30,
+                    //   ),
+                    // ),
+                  ),
                 ),
-              ),
+                if (_rewards != null && _rewards!.isNotEmpty)
+                  Expanded(
+                    flex: 3,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        textAlign: TextAlign.right,
+                        'Rewards: ${_rewards ?? ''}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.normal,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
@@ -77,11 +122,11 @@ class _HomeScreenState extends State<HomeScreen> {
               builder: (BuildContext context,
                   AsyncSnapshot<QuerySnapshot> snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator());
                 }
 
                 if (snapshot.hasError) {
-                  return Center(child: Text('Something went wrong!'));
+                  return const Center(child: Text('Something went wrong!'));
                 }
 
                 if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
@@ -91,29 +136,38 @@ class _HomeScreenState extends State<HomeScreen> {
                       Map<String, dynamic> data =
                           document.data()! as Map<String, dynamic>;
                       return Card(
-                        margin:
-                            EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                        margin: const EdgeInsets.symmetric(
+                            vertical: 8, horizontal: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 4,
                         child: ListTile(
+                          contentPadding: const EdgeInsets.all(16.0),
                           title: Text(
                             data['title'],
-                            style: TextStyle(color: Colors.blue),
+                            style: const TextStyle(
+                                color: Colors.blueAccent,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold),
                           ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('Description: ${data['description']}'),
-                              Text('Reminder Time: ${data['reminderTime']}'),
+                              const SizedBox(height: 4),
+                              Text('Reminder Time: ${data['reminderTime']}',
+                                  style: TextStyle(color: Colors.grey[700])),
                             ],
                           ),
-                          trailing: Icon(Icons.edit),
+                          trailing: Icon(Icons.edit, color: Colors.blueAccent),
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => EditHabitScreen(
-                                  habitId: document.id, // Pass the habit ID
-                                  title: data['title'] ??
-                                      '', // Fallback to an empty string if null
+                                  habitId: document.id,
+                                  title: data['title'] ?? '',
                                   description: data['description'] ?? '',
                                   reminderTime: data['reminderTime'] ?? '',
                                 ),
@@ -125,8 +179,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     }).toList(),
                   );
                 } else {
-                  return Center(
-                      child: Text('No habits found. Start adding some!'));
+                  return const Padding(
+                    padding: EdgeInsets.all(24.0),
+                    child: Center(
+                        child: Text(
+                            'Ready for a challenge? Add 5 habits and enjoy 10 rewards every day!')),
+                  );
                 }
               },
             ),
@@ -163,9 +221,9 @@ class _HomeScreenState extends State<HomeScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
           BottomNavigationBarItem(icon: Icon(Icons.add), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: '')
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
         ],
-        selectedItemColor: Colors.white,
+        selectedItemColor: Colors.blueAccent,
         unselectedItemColor: Colors.grey,
       ),
     );

@@ -5,7 +5,6 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-// Login with email and password
   Future<User?> signInWithEmailAndPassword(
       String email, String password) async {
     try {
@@ -19,7 +18,6 @@ class AuthService {
     }
   }
 
-  // register with email and password
   Future<User?> registerInWithEmailAndPassword(
       String email, String password, String userName) async {
     try {
@@ -28,8 +26,8 @@ class AuthService {
       User? user = result.user;
       if (user != null) {
         await _firestore.collection('users').doc(user.uid).set({
-          'username': userName, // Storing the username
-          'email': email, // Storing the email
+          'username': userName,
+          'email': email,
         });
       }
       return user;
@@ -39,7 +37,6 @@ class AuthService {
     }
   }
 
-  // logout
   Future<void> logout() async {
     try {
       return await _auth.signOut();
@@ -49,7 +46,6 @@ class AuthService {
     }
   }
 
-  // curret User
   User? getCuttentUser() {
     return _auth.currentUser;
   }

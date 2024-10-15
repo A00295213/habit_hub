@@ -66,23 +66,67 @@ class _EditHabitScreenState extends State<EditHabitScreen> {
   }
 
   Future<void> _deleteHabit() async {
+    DateTime now = DateTime.now();
+    DateTime startOfDay = DateTime(now.year, now.month, now.day);
+    DateTime endOfDay = DateTime(now.year, now.month, now.day + 1);
+
+    Timestamp startTimestamp = Timestamp.fromDate(startOfDay);
+    Timestamp endTimestamp = Timestamp.fromDate(endOfDay);
+
+    QuerySnapshot befpreQuerySnapshot = await FirebaseFirestore.instance
+        .collection('habit')
+        .where('userId',
+            isEqualTo: FirebaseAuth.instance.currentUser?.uid ?? '')
+        .where('createdAt', isGreaterThan: startTimestamp)
+        .where('createdAt', isLessThan: endTimestamp)
+        .get();
+
     await FirebaseFirestore.instance
         .collection('habit')
         .doc(widget.habitId)
         .delete();
+
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('habit')
+        .where('userId',
+            isEqualTo: FirebaseAuth.instance.currentUser?.uid ?? '')
+        .where('createdAt', isGreaterThan: startTimestamp)
+        .where('createdAt', isLessThan: endTimestamp)
+        .get();
+
+    print('test ----- ${querySnapshot.size}');
+    if (befpreQuerySnapshot.size == 5 && querySnapshot.size < 5) {
+      DocumentReference userDoc = FirebaseFirestore.instance
+          .collection('users')
+          .doc(FirebaseAuth.instance.currentUser?.uid ?? '');
+
+      await userDoc.update({
+        'rewards': FieldValue.increment(-10),
+      }).then((_) {
+        print("Rewards updated successfully!");
+      }).catchError((error) {
+        print("Failed to update rewards: $error");
+      });
+    }
+
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Edit HAbit'),
+        title: const Text(
+          'Edit Habit',
+          style: TextStyle(color: Colors.white),
+        ),
         actions: [
           IconButton(
               onPressed: _deleteHabit,
               icon: const Icon(Icons.delete_forever_rounded))
         ],
+        backgroundColor: Colors.blueAccent,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),

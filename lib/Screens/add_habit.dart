@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+
 import 'package:habit_hub/Screens/home_screen.dart';
 import 'package:habit_hub/Screens/profile_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,17 +11,10 @@ class AddScreen extends StatefulWidget {
 }
 
 class _AddScreenState extends State<AddScreen> {
+  TimeOfDay _selectedTime = TimeOfDay.now();
   final _formkey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  TimeOfDay _selectedTime = TimeOfDay.now();
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
-  }
 
   Future<void> _selectTime(BuildContext context) async {
     final TimeOfDay? picked = await showTimePicker(
@@ -32,6 +26,29 @@ class _AddScreenState extends State<AddScreen> {
         _selectedTime = picked;
       });
     }
+  }
+
+  // void ringAlarm() {
+  //   FlutterRingtonePlayer.playAlarm(volume: 0.9, looping: true);
+  // }
+
+  // void _setAlarm() {
+  //   final now = DateTime.now();
+  //   final alarmTime = DateTime(
+  //       now.year, now.month, now.day, _selectedTime.hour, _selectedTime.minute);
+
+  //   AndroidAlarmManager.oneShotAt(alarmTime, 0, ringAlarm);
+
+  //   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+  //     content: Text('Reminder set for ${_selectedTime.format(context)}'),
+  //   ));
+  // }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
   }
 
   void _saveHabit() async {
@@ -52,6 +69,36 @@ class _AddScreenState extends State<AddScreen> {
       ));
       _titleController.clear();
       _descriptionController.clear();
+
+      DateTime now = DateTime.now();
+      DateTime startOfDay = DateTime(now.year, now.month, now.day);
+      DateTime endOfDay = DateTime(now.year, now.month, now.day + 1);
+
+      Timestamp startTimestamp = Timestamp.fromDate(startOfDay);
+      Timestamp endTimestamp = Timestamp.fromDate(endOfDay);
+
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('habit')
+          .where('userId',
+              isEqualTo: FirebaseAuth.instance.currentUser?.uid ?? '')
+          .where('createdAt', isGreaterThan: startTimestamp)
+          .where('createdAt', isLessThan: endTimestamp)
+          .get();
+
+      print('test ----- ${querySnapshot.size}');
+      if (querySnapshot.size == 5) {
+        DocumentReference userDoc = FirebaseFirestore.instance
+            .collection('users')
+            .doc(FirebaseAuth.instance.currentUser?.uid ?? '');
+
+        await userDoc.update({
+          'rewards': FieldValue.increment(10),
+        }).then((_) {
+          print("Rewards updated successfully!");
+        }).catchError((error) {
+          print("Failed to update rewards: $error");
+        });
+      }
 
       Navigator.pushReplacement(
         context,
@@ -81,8 +128,6 @@ class _AddScreenState extends State<AddScreen> {
             key: _formkey,
             child: ListView(
               children: [
-                //Title field
-
                 TextFormField(
                   controller: _titleController,
                   decoration: const InputDecoration(
@@ -100,9 +145,6 @@ class _AddScreenState extends State<AddScreen> {
                 const SizedBox(
                   height: 20,
                 ),
-
-                // Descripiton field
-
                 TextFormField(
                   controller: _descriptionController,
                   maxLines: 3,
@@ -136,9 +178,16 @@ class _AddScreenState extends State<AddScreen> {
                   ],
                 ),
                 ElevatedButton(
-                  onPressed: _saveHabit,
-                  child: const Text('Save habit'),
+                  onPressed: () => _selectTime(context),
+                  child: Text('Pick Reminder Time'),
                 ),
+                SizedBox(height: 10),
+                Text('Selected Time: ${_selectedTime.format(context)}'),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _saveHabit,
+                  child: Text('Save Habit'),
+                )
               ],
             )),
       ),
@@ -172,9 +221,9 @@ class _AddScreenState extends State<AddScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
           BottomNavigationBarItem(icon: Icon(Icons.add), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: '')
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
         ],
-        selectedItemColor: Colors.white,
+        selectedItemColor: Colors.blueAccent,
         unselectedItemColor: Colors.grey,
       ),
     );

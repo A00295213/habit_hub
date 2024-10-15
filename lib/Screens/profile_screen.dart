@@ -17,7 +17,8 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   String? _username;
-  bool _isLoading = true; // To track loading state
+  String? _rewards;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -25,7 +26,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _fetchUsername();
   }
 
-  // Fetch the username from Firestore using the current user's uid
   Future<void> _fetchUsername() async {
     var currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser != null) {
@@ -36,13 +36,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             .get();
 
         setState(() {
-          _username = userDoc['username']; // Fetch the 'username' field
-          _isLoading = false; // Once fetched, set loading to false
+          _username = userDoc['username'];
+          _rewards = userDoc['rewards']?.toString();
+          _isLoading = false;
         });
       } catch (e) {
         print('Error fetching username: $e');
         setState(() {
-          _isLoading = false; // Even on error, set loading to false
+          _isLoading = false;
         });
       }
     }
@@ -55,7 +56,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        title: const Text(
+          'Your Profile',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.blueAccent,
         actions: [
           IconButton(
               onPressed: () {
@@ -76,7 +81,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Row(
               children: [
                 const CircleAvatar(
-                  radius: 50,
+                  radius: 30,
                   child: Icon(
                     Icons.person,
                     size: 60,
@@ -85,7 +90,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(
                   width: 30,
                 ),
-                // Display a loading indicator or the username
                 _isLoading
                     ? const CircularProgressIndicator()
                     : Text(
@@ -93,6 +97,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ? 'Hello, $_username!'
                             : 'Username not found',
                         style: const TextStyle(
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 30,
                         ),
@@ -102,53 +107,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(
               height: 40,
             ),
-            const Row(
-              children: [
-                Text(
-                  'Change Profile photo',
-                  style: TextStyle(
-                    fontSize: 20,
-                  ),
-                ),
-                Spacer(),
-                Icon(Icons.camera_alt_outlined)
-              ],
-            ),
-            const SizedBox(
-              height: 40,
-            ),
-            const Row(
-              children: [
-                Text(
-                  'Change User Name',
-                  style: TextStyle(
-                    fontSize: 20,
-                  ),
-                ),
-                Spacer(),
-                Icon(Icons.edit_outlined)
-              ],
-            ),
-            const SizedBox(
-              height: 40,
-            ),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Reset Password',
+                  'Rewards',
                   style: TextStyle(
                     fontSize: 20,
+                    color: Colors.white,
                   ),
                 ),
-                const Spacer(),
-                IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => ResetPassword()));
-                    },
-                    icon: const Icon(Icons.lock_outline))
+                Text(
+                  _rewards ?? '',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.white,
+                  ),
+                ),
               ],
             ),
             const SizedBox(
@@ -160,6 +136,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   'Logout',
                   style: TextStyle(
                     fontSize: 20,
+                    color: Colors.white,
                   ),
                 ),
                 const Spacer(),
@@ -171,13 +148,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           MaterialPageRoute(
                               builder: (context) => WelcomeScreen()));
                     },
-                    icon: const Icon(Icons.logout_outlined))
+                    icon:
+                        const Icon(Icons.logout_outlined, color: Colors.white))
               ],
             )
           ],
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Colors.black,
         onTap: (index) {
           if (index == 0) {
             Navigator.pushReplacement(
@@ -205,10 +184,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
         },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.add), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: '')
+          BottomNavigationBarItem(
+              icon: Icon(Icons.home, color: Colors.white), label: ''),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.add, color: Colors.white), label: ''),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.person, color: Colors.white), label: '')
         ],
+        selectedItemColor: Colors.blueAccent,
+        unselectedItemColor: Colors.grey,
       ),
     );
   }
