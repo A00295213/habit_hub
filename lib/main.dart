@@ -1,3 +1,4 @@
+import 'package:alarm/alarm.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:habit_hub/Screens/add_habit.dart';
@@ -8,6 +9,7 @@ import 'package:habit_hub/Screens/welcome_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await Alarm.init();
 
   runApp(const MyApp());
 }

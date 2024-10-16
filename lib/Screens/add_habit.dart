@@ -1,3 +1,8 @@
+import 'dart:io';
+
+import 'package:alarm/alarm.dart';
+import 'package:alarm/model/alarm_settings.dart';
+// import 'package:alarm/model/notification_settings.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -57,48 +62,96 @@ class _AddScreenState extends State<AddScreen> {
       String description = _descriptionController.text;
       String reminderTime = _selectedTime.format(context);
 
-      await FirebaseFirestore.instance.collection('habit').add({
+      DocumentReference docRef =
+          await FirebaseFirestore.instance.collection('habit').add({
         'userId': FirebaseAuth.instance.currentUser?.uid,
         'title': habitTitle,
         'description': description,
         'reminder': reminderTime,
         'createdAt': Timestamp.now(),
+        'alarmId': FieldValue.increment(1),
       });
+
+      print('test ---- ${docRef.id}');
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Habit "$habitTitle" added!'),
       ));
+
+      DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+          .collection('habit')
+          .doc(docRef.id)
+          .get();
+
+      int alarmId = documentSnapshot['alarmId'];
+
+      print('test $alarmId');
+      DateTime now = DateTime.now();
+
+      // Specific time of day
+
+      // Combine date and time
+      DateTime fullDateTime = DateTime(
+        now.year,
+        now.month,
+        now.day,
+        _selectedTime.hour,
+        _selectedTime.minute,
+      );
+
+      final alarmSettings = AlarmSettings(
+        notificationTitle: habitTitle,
+        notificationBody: description,
+        id: alarmId,
+        dateTime: fullDateTime,
+        assetAudioPath: 'assets/loudest-alarm-ever-36964.mp3',
+        loopAudio: false,
+        vibrate: true,
+        volume: 0.8,
+        fadeDuration: 3.0,
+        enableNotificationOnKill: true,
+        // warningNotificationOnKill: Platform.isIOS,
+        // notificationSettings: NotificationSettings(
+        //   title: habitTitle,
+        //   body: description,
+        //   stopButton: 'Stop',
+        //   icon: 'notification_icon',
+        // ),
+      );
+
+      await Alarm.set(alarmSettings: alarmSettings);
+
       _titleController.clear();
       _descriptionController.clear();
 
-      DateTime now = DateTime.now();
-      DateTime startOfDay = DateTime(now.year, now.month, now.day);
-      DateTime endOfDay = DateTime(now.year, now.month, now.day + 1);
-
-      Timestamp startTimestamp = Timestamp.fromDate(startOfDay);
-      Timestamp endTimestamp = Timestamp.fromDate(endOfDay);
-
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('habit')
-          .where('userId',
-              isEqualTo: FirebaseAuth.instance.currentUser?.uid ?? '')
-          .where('createdAt', isGreaterThan: startTimestamp)
-          .where('createdAt', isLessThan: endTimestamp)
-          .get();
-
-      print('test ----- ${querySnapshot.size}');
-      if (querySnapshot.size == 5) {
-        DocumentReference userDoc = FirebaseFirestore.instance
-            .collection('users')
-            .doc(FirebaseAuth.instance.currentUser?.uid ?? '');
-
-        await userDoc.update({
-          'rewards': FieldValue.increment(10),
-        }).then((_) {
-          print("Rewards updated successfully!");
-        }).catchError((error) {
-          print("Failed to update rewards: $error");
-        });
-      }
+      // DateTime now = DateTime.now();
+      // DateTime startOfDay = DateTime(now.year, now.month, now.day);
+      // DateTime endOfDay = DateTime(now.year, now.month, now.day + 1);
+      //
+      // Timestamp startTimestamp = Timestamp.fromDate(startOfDay);
+      // Timestamp endTimestamp = Timestamp.fromDate(endOfDay);
+      //
+      // QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+      //     .collection('habit')
+      //     .where('userId',
+      //         isEqualTo: FirebaseAuth.instance.currentUser?.uid ?? '')
+      //     .where('createdAt', isGreaterThan: startTimestamp)
+      //     .where('createdAt', isLessThan: endTimestamp)
+      //     .get();
+      //
+      // print('test ----- ${querySnapshot.size}');
+      // if (querySnapshot.size == 5) {
+      //   DocumentReference userDoc = FirebaseFirestore.instance
+      //       .collection('users')
+      //       .doc(FirebaseAuth.instance.currentUser?.uid ?? '');
+      //
+      //   await userDoc.update({
+      //     'rewards': FieldValue.increment(10),
+      //   }).then((_) {
+      //     print("Rewards updated successfully!");
+      //   }).catchError((error) {
+      //     print("Failed to update rewards: $error");
+      //   });
+      // }
 
       Navigator.pushReplacement(
         context,

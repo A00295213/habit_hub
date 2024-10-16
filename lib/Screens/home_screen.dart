@@ -156,7 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               Text('Description: ${data['description']}'),
                               const SizedBox(height: 4),
-                              Text('Reminder Time: ${data['reminderTime']}',
+                              Text('Reminder Time: ${data['reminder']}',
                                   style: TextStyle(color: Colors.grey[700])),
                             ],
                           ),
@@ -166,10 +166,12 @@ class _HomeScreenState extends State<HomeScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => EditHabitScreen(
+                                  isCompleted: data['iscompleted'] ?? false,
                                   habitId: document.id,
                                   title: data['title'] ?? '',
                                   description: data['description'] ?? '',
-                                  reminderTime: data['reminderTime'] ?? '',
+                                  reminderTime: data['reminder'] ?? '',
+                                  alarmId: data['alarmId'] ?? 0,
                                 ),
                               ),
                             );
